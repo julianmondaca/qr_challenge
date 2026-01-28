@@ -1,0 +1,12 @@
+# Database Configuration
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/qr_challenge
+
+# JWT Configuration
+JWT_SECRET_KEY=your-secret-key-here-change-in-production
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Application Configuration
+APP_NAME=QR Code Management System
+APP_VERSION=1.0.0
+DEBUG=True
