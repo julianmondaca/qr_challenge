@@ -14,17 +14,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
     try:
-        user_repo = UserRepository(db)
-        
-        # Check if user exists
-        if user_repo.get_by_email(user_data.email):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
-            )
-        
-        hashed_password = AuthService.get_password_hash(user_data.password)
-        return user_repo.create(user_data, hashed_password)
+        auth_service = AuthService(db)
+        return auth_service.sign_up(user_data)
     except HTTPException:
         raise
     except Exception as e:
@@ -40,20 +31,8 @@ def login(
     db: Session = Depends(get_db)
 ):
     try:
-        user_repo = UserRepository(db)
-        user = user_repo.get_by_email(form_data.username) # OAuth2 uses 'username' for email
-        
-        if not user or not AuthService.verify_password(form_data.password, user.password_hash):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect email or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        
-        access_token = AuthService.create_access_token(
-            data={"sub": user.email, "user_id": str(user.uuid)}
-        )
-        return {"access_token": access_token, "token_type": "bearer"}
+        auth_service = AuthService(db)
+        return auth_service.authenticate_user(form_data.username, form_data.password)
     except HTTPException:
         raise
     except Exception as e:

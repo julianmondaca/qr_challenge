@@ -22,25 +22,17 @@ def create_qr_code(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        qr_repo = QRCodeRepository(db)
-        # 1. Create the record in DB
-        qr = qr_repo.create(qr_data, current_user.uuid)
-        
-        # 2. Prepare tracking URL
+        service = QRCodeService(db)
         base_url = str(request.base_url).rstrip("/")
-        tracking_url = f"{base_url}/api/v1/scan/{qr.uuid}"
+        qr, img_buffer = service.create_qr(qr_data, current_user.uuid, base_url)
         
-        # 3. Generate the image
-        img_buffer = QRCodeService.generate_qr_image(qr, tracking_url)
-        
-        # 4. Return as downloadable file with metadata in headers
         filename = f"qr_{qr.uuid}.png"
         return StreamingResponse(
             img_buffer, 
             media_type="image/png",
             headers={
                 "Content-Disposition": f'attachment; filename="{filename}"',
-                "Access-Control-Expose-Headers": "X-QR-UUID, X-QR-URL, X-QR-Color, X-QR-Size, X-QR-Created-At", # Important for frontend access
+                "Access-Control-Expose-Headers": "X-QR-UUID, X-QR-URL, X-QR-Color, X-QR-Size, X-QR-Created-At",
                 "X-QR-UUID": str(qr.uuid),
                 "X-QR-URL": qr.url,
                 "X-QR-Color": qr.color,
@@ -61,8 +53,8 @@ def list_qr_codes(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        qr_repo = QRCodeRepository(db)
-        return qr_repo.get_by_user(current_user.uuid)
+        service = QRCodeService(db)
+        return service.get_user_qr_codes(current_user.uuid)
     except Exception as e:
         print(f"Error listing QR codes: {e}")
         raise HTTPException(
@@ -77,11 +69,8 @@ def get_qr_code(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        qr_repo = QRCodeRepository(db)
-        qr = qr_repo.get_by_id(qr_uuid)
-        if not qr or qr.user_uuid != current_user.uuid:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="QR Code not found")
-        return qr
+        service = QRCodeService(db)
+        return service.get_qr_detail(qr_uuid, current_user.uuid)
     except HTTPException:
         raise
     except Exception as e:
@@ -99,12 +88,8 @@ def update_qr_code(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        qr_repo = QRCodeRepository(db)
-        qr = qr_repo.get_by_id(qr_uuid)
-        if not qr or qr.user_uuid != current_user.uuid:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="QR Code not found")
-        
-        return qr_repo.update(qr_uuid, qr_data)
+        service = QRCodeService(db)
+        return service.update_qr(qr_uuid, current_user.uuid, qr_data)
     except HTTPException:
         raise
     except Exception as e:
@@ -126,7 +111,6 @@ def get_qr_image(
         if not qr:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="QR Code not found")
         
-        # The tracking URL is the URL that will be encoded in the QR
         base_url = str(request.base_url).rstrip("/")
         tracking_url = f"{base_url}/api/v1/scan/{qr.uuid}"
         
@@ -148,13 +132,8 @@ def get_qr_stats(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        qr_repo = QRCodeRepository(db)
-        # Verify ownership
-        qr = qr_repo.get_by_id(qr_uuid)
-        if not qr or qr.user_uuid != current_user.uuid:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="QR Code not found")
-        
-        return qr_repo.get_stats(qr_uuid)
+        service = QRCodeService(db)
+        return service.get_stats(qr_uuid, current_user.uuid)
     except HTTPException:
         raise
     except Exception as e:
