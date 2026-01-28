@@ -30,6 +30,7 @@ def create_qr_code(
         return StreamingResponse(
             img_buffer, 
             media_type="image/png",
+            status_code=status.HTTP_201_CREATED,
             headers={
                 "Content-Disposition": f'attachment; filename="{filename}"',
                 "Access-Control-Expose-Headers": "X-QR-UUID, X-QR-URL, X-QR-Color, X-QR-Size, X-QR-Created-At",

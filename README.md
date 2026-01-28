@@ -90,5 +90,25 @@ En Swagger o Postman, utiliza el token obtenido en el login como:
 
 ---
 
+## 🧪 Testing
+
+El proyecto utiliza **pytest** para las pruebas de integración.
+
+### 1. Preparación
+Se recomienda tener una base de datos separada para los tests:
+```sql
+CREATE DATABASE qr_challenge_test;
+```
+
+### 2. Ejecución
+Para correr las pruebas, ejecuta:
+```bash
+# Definir la URL de la base de datos de test si es diferente a la por defecto
+export TEST_DATABASE_URL=postgresql://tu_usuario@localhost:5432/qr_challenge_test
+pytest
+```
+
+---
+
 ## 📄 Licencia
 Este proyecto fue realizado como parte de un desafío técnico.
