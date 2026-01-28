@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.src.database import get_db
 from app.src.repositories.user_repository import UserRepository
 from app.src.models.users import User
+from app.src.schemas.auth import UserCreate
 
 load_dotenv()
 
@@ -21,6 +22,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", 3
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class AuthService:
+    def __init__(self, db: Session):
+        self.user_repo = UserRepository(db)
+
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         return pwd_context.verify(plain_password, hashed_password)
@@ -48,6 +52,32 @@ class AuthService:
             return payload
         except jwt.PyJWTError:
             return None
+
+    def sign_up(self, user_data: UserCreate) -> User:
+        # Check if user exists
+        if self.user_repo.get_by_email(user_data.email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        
+        hashed_password = self.get_password_hash(user_data.password)
+        return self.user_repo.create(user_data, hashed_password)
+
+    def authenticate_user(self, email: str, password: str) -> dict:
+        user = self.user_repo.get_by_email(email)
+        
+        if not user or not self.verify_password(password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        access_token = self.create_access_token(
+            data={"sub": user.email, "user_id": str(user.uuid)}
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
 
 def get_current_user(
     token: Annotated[str, Depends(OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login"))],
