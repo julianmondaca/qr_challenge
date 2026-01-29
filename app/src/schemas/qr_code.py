@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, HttpUrl, Field, ConfigDict, field_validator
 from uuid import UUID
 from datetime import datetime
 from typing import Optional
@@ -17,11 +17,17 @@ class QRCodeUpdate(BaseModel):
     size: Optional[int] = None
 
 class QRCodeResponse(QRCodeBase):
+    model_config = ConfigDict(from_attributes=True)
+
     uuid: UUID
     user_uuid: UUID
     base64_image: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+    created_at: int
+    updated_at: int
 
-    class Config:
-        from_attributes = True
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def convert_datetime_to_timestamp(cls, v):
+        if isinstance(v, datetime):
+            return int(v.timestamp() * 1000)
+        return v

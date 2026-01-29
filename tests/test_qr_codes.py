@@ -22,7 +22,7 @@ def test_create_qr_code(client, auth_header):
         json={"url": "https://example.com", "color": "#FF0000", "size": 300},
         headers=auth_header
     )
-    assert response.status_code == status.HTTP_201_CREATED
+    assert response.status_code == status.HTTP_201_CREATED, f"Failed to create QR: {response.text}"
     assert response.headers["content-type"] == "image/png"
     assert "X-QR-UUID" in response.headers
 
@@ -33,7 +33,7 @@ def test_list_qr_codes(client, auth_header):
         json={"url": "https://example1.com", "color": "#000000", "size": 300},
         headers=auth_header
     )
-    assert res.status_code == status.HTTP_201_CREATED
+    assert res.status_code == status.HTTP_201_CREATED, f"Failed to create QR: {res.text}"
     
     response = client.get("/api/v1/qr-codes/", headers=auth_header)
     assert response.status_code == status.HTTP_200_OK

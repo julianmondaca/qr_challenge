@@ -27,6 +27,8 @@ def setup_test_db():
     Requires the database specified in TEST_DATABASE_URL to exist.
     """
     try:
+        # Drop and recreate to ensure schema changes are applied
+        Base.metadata.drop_all(bind=engine)
         Base.metadata.create_all(bind=engine)
     except Exception as e:
         pytest.exit(f"Could not connect to test database: {e}. Please ensure it exists.")

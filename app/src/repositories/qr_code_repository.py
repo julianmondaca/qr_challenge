@@ -12,7 +12,7 @@ class QRCodeRepository:
         db_qr = QRCode(
             url=qr_data.url,
             color=qr_data.color,
-            size=str(qr_data.size),
+            size=qr_data.size,
             user_uuid=user_uuid
         )
         self.db.add(db_qr)
@@ -33,8 +33,6 @@ class QRCodeRepository:
         
         update_data = qr_data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
-            if key == "size":
-                value = str(value)
             setattr(db_qr, key, value)
         
         self.db.commit()
