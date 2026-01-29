@@ -1,8 +1,7 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey, Index
+from sqlalchemy import Column, String, Integer, BigInteger, ForeignKey, Index
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.sql import func
 import uuid
-
+import time
 from app.src.database import Base
 
 class QRCode(Base):
@@ -11,13 +10,13 @@ class QRCode(Base):
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     url = Column(String, nullable=False)
     color = Column(String, nullable=False)
-    size = Column(String, nullable=False)
+    size = Column(Integer, nullable=False)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(BigInteger, default=lambda: int(time.time() * 1000))
     updated_at = Column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now()
+        BigInteger,
+        default=lambda: int(time.time() * 1000),
+        onupdate=lambda: int(time.time() * 1000)
     )
 
     user_uuid = Column(

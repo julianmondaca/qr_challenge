@@ -38,14 +38,16 @@ def create_qr_code(
                 "X-QR-URL": qr.url,
                 "X-QR-Color": qr.color,
                 "X-QR-Size": str(qr.size),
-                "X-QR-Created-At": qr.created_at.isoformat()
+                "X-QR-Created-At": str(qr.created_at)
             }
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Error creating QR code: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error occurred while creating the QR code"
+            detail=f"Error occurred while creating the QR code: {str(e)}"
         )
 
 @router.get("/", response_model=List[QRCodeResponse])
